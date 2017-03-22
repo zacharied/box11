@@ -1,7 +1,7 @@
 XBOX
 ====
 
-Draws boxes on an X server.
+Draws boxes of text on an X server. Supports Pango!
 
 ## Usage
 `xbox` displays standard input.
