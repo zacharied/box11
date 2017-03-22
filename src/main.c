@@ -7,15 +7,25 @@
 #include <cairo/cairo-xcb.h>
 #include <pango-1.0/pango/pangocairo.h>
 
+#define OVERRIDE_REDIRECT 1
+
 #define CHAR_BUF 4096
 
-#define WINDOW_X 20
-#define WINDOW_Y 20
-#define WINDOW_WIDTH 300
-#define WINDOW_HEIGHT 40
-#define WINDOW_BORDER 0
-#define FONT "Sans 30"
+#define DEFAULT_WINDOW_X 20
+#define DEFAULT_WINDOW_Y 20
+#define DEFAULT_WINDOW_WIDTH 300
+#define DEFAULT_WINDOW_HEIGHT 40
+#define DEFAULT_WINDOW_BORDER 0
+#define DEFAULT_FONT "Sans 30"
 
+struct opts {
+        const char *font;
+        unsigned int x, y, width, height;
+        unsigned int border;
+};
+
+
+/* No more global pointers in L.A., please baby no more global pointers in L.A. */
 static xcb_connection_t *conn;
 static xcb_screen_t *screen;
 static xcb_window_t window;
@@ -23,6 +33,59 @@ static xcb_visualtype_t *visual;
 static cairo_surface_t *surface;
 static cairo_t *cr;
 static PangoLayout *layout;
+
+static struct opts *o;
+
+static
+const char*
+usage() {
+        return "Usage: xbox [-u] [-f font] [-x xpos] [-y ypos] [-w width] [-h height] [-b border]\n";
+}
+
+static
+void
+parse_opts(int argc, char *argv[]) {
+        o = (struct opts*) malloc(sizeof(struct opts));
+
+        /* Initialize default arguments. */
+        o->font = DEFAULT_FONT;
+        o->x = DEFAULT_WINDOW_X;
+        o->y = DEFAULT_WINDOW_Y;
+        o->width = DEFAULT_WINDOW_WIDTH;
+        o->height = DEFAULT_WINDOW_HEIGHT;
+        o->border = DEFAULT_WINDOW_BORDER;
+
+        /* Set to given arguments or print information. */
+        int opt;
+        while ((opt = getopt(argc, argv, "uf:x:y:w:h:b:")) != -1) {
+                switch (opt) {
+                        case 'u':
+                                printf(usage());
+                                exit(EXIT_SUCCESS);
+                        case 'f':
+                                o->font = optarg;
+                                break;
+                        case 'x':
+                                o->x = atoi(optarg);
+                                break;
+                        case 'y':
+                                o->y = atoi(optarg);
+                                break;
+                        case 'w':
+                                o->width = atoi(optarg);
+                                break;
+                        case 'h':
+                                o->height = atoi(optarg);
+                                break;
+                        case 'b':
+                                o->border = atoi(optarg);
+                                break;
+                        default:
+                                printf(usage());
+                                exit(EXIT_FAILURE);
+                }
+        }
+}
 
 static
 xcb_visualtype_t*
@@ -47,20 +110,20 @@ void
 draw_text(const char *text)
 {
         /* Initialize the Pango layout. */
-        pango_layout_set_width(layout, WINDOW_WIDTH * PANGO_SCALE);
-        pango_layout_set_height(layout, WINDOW_HEIGHT * PANGO_SCALE);
+        pango_layout_set_width(layout, o->width * PANGO_SCALE);
+        pango_layout_set_height(layout, o->height * PANGO_SCALE);
         pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
 
         /* Set the text font. */
         pango_layout_set_text(layout, text, -1);
-        PangoFontDescription *desc = pango_font_description_from_string(FONT);
+        PangoFontDescription *desc = pango_font_description_from_string(o->font);
         pango_layout_set_font_description(layout, desc);
         pango_font_description_free(desc);
 
         /* Vertically center the text. */
         PangoRectangle rect;
         pango_layout_get_pixel_extents(layout, NULL, &rect);
-        cairo_translate(cr, 0, WINDOW_HEIGHT / 2.0 - rect.height / 2.0 - rect.y);
+        cairo_translate(cr, 0, o->height / 2.0 - rect.height / 2.0 - rect.y);
 
         /* Draw the text. */
         cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
@@ -71,6 +134,8 @@ draw_text(const char *text)
 
 int main(int argc, char *argv[])
 {
+        parse_opts(argc, argv);
+
         /* First, load input. */
         char text[CHAR_BUF];
         int length = read(0, text, sizeof(text));
@@ -103,15 +168,15 @@ int main(int argc, char *argv[])
                 screen->root_depth,
                 window,
                 screen->root,
-                WINDOW_X, WINDOW_Y,
-                WINDOW_WIDTH, WINDOW_HEIGHT,
-                WINDOW_BORDER,
+                o->x, o->y,
+                o->width, o->height,
+                o->border,
                 XCB_WINDOW_CLASS_INPUT_OUTPUT,
                 screen->root_visual,
                 mask, values);
 
         /* Setup floating. */
-        unsigned int override[1] = { 1 };
+        unsigned int override[1] = { OVERRIDE_REDIRECT };
         xcb_change_window_attributes(conn,
                         window,
                         XCB_CW_OVERRIDE_REDIRECT,
@@ -121,7 +186,7 @@ int main(int argc, char *argv[])
         xcb_map_window(conn, window);
 
         /* Initialize the graphical objects. */
-        surface = cairo_xcb_surface_create(conn, window, visual, WINDOW_WIDTH, WINDOW_HEIGHT);
+        surface = cairo_xcb_surface_create(conn, window, visual, o->width, o->height);
         cr = cairo_create(surface);
         layout = pango_cairo_create_layout(cr);
 
@@ -136,14 +201,19 @@ int main(int argc, char *argv[])
                                 draw_text(text);
                                 xcb_flush(conn);
                                 break;
+                        default:
+                                printf("Unrecognized event -- this shouldn't happen!");
+                                break;
                 }
-
 
                 free(event);
         }
 
-
-        /* We're done with our resources! */
+        /*
+         * We're done with our resources!
+         * Well, actually, this code path will never be reached, since the program can only end by SIGKILL.
+         * Maybe in another life.
+         */
         cairo_surface_finish(surface);
         xcb_disconnect(conn);
 
