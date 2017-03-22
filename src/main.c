@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
         unsigned int mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
         unsigned int values[2];
         values[0] = screen->white_pixel;
-        values[1] = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS;
+        values[1] = XCB_EVENT_MASK_EXPOSURE;
 
         xcb_create_window(conn,
                 screen->root_depth,
