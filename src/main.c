@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <unistd.h>
+#include <getopt.h>
 
 #include <xcb/xcb.h>
 #include <cairo/cairo-xcb.h>
@@ -17,13 +19,37 @@
 #define DEFAULT_WINDOW_HEIGHT 40
 #define DEFAULT_WINDOW_BORDER 0
 #define DEFAULT_FONT "Sans 30"
+#define DEFAULT_FG (uint32_t)0xFFFFFFU
+#define DEFAULT_BG (uint32_t)0x545454U
+
+#define USAGE "Usage: xbox [OPTIONS]\n"\
+"   --help              Show this help\n"\
+"-f --font [FONT]       Print text with font FONT\n"\
+"-x --xpos [X]          Set the x-coordinate of the box\n"\
+"-y --ypos [Y]          Set the y-coordinate of the box\n"\
+"-w --width [WIDTH]     Set the width of the box\n"\
+"-h --height [HEIGHT]   Set the height of the box\n"\
+"-b --border [BORDER]   Set the border width of the box\n"\
+"-t --fg-color [COLOR]  Draw text with the color COLOR\n"\
+"-k --bg-color [COLOR]  Draw box with the background color COLOR\n"\
+"Colors should be given in the form RRGGBB.\n"\
+"All measurements are in pixels.\n"
+
+union rgb {
+        struct {
+                uint8_t b;
+                uint8_t g;
+                uint8_t r;
+        };
+        uint32_t v;
+};
 
 struct opts {
         const char *font;
         unsigned int x, y, width, height;
         unsigned int border;
+        union rgb fg, bg;
 };
-
 
 /* No more global pointers in L.A., please baby no more global pointers in L.A. */
 static xcb_connection_t *conn;
@@ -37,14 +63,23 @@ static PangoLayout *layout;
 static struct opts *o;
 
 static
-const char*
-usage() {
-        return "Usage: xbox [-u] [-f font] [-x xpos] [-y ypos] [-w width] [-h height] [-b border]\n";
+void
+usage()
+{
+        printf(USAGE);
+}
+
+static
+union rgb
+parse_color_string(const char *color)
+{
+        return (union rgb)(uint32_t)strtoul(color, NULL, 16);
 }
 
 static
 void
-parse_opts(int argc, char *argv[]) {
+parse_opts(int argc, char *argv[])
+{
         o = (struct opts*) malloc(sizeof(struct opts));
 
         /* Initialize default arguments. */
@@ -54,14 +89,34 @@ parse_opts(int argc, char *argv[]) {
         o->width = DEFAULT_WINDOW_WIDTH;
         o->height = DEFAULT_WINDOW_HEIGHT;
         o->border = DEFAULT_WINDOW_BORDER;
+        o->fg = (union rgb)DEFAULT_FG;
+        o->bg = (union rgb)DEFAULT_BG;
+
+        static int help_flag;
+
+        static struct option long_options[] = {
+                {"help", no_argument, &help_flag, 1},
+                {"font", required_argument, 0, 'f'},
+                {"x", required_argument, 0, 'x'},
+                {"y", required_argument, 0, 'y'},
+                {"width", required_argument, 0, 'w'},
+                {"height", required_argument, 0, 'h'},
+                {"border", required_argument, 0, 'b'},
+                {"fg-color", required_argument, 0, 't'},
+                {"bg-color", required_argument, 0, 'k'},
+                {0, 0, 0, 0}
+        };
 
         /* Set to given arguments or print information. */
         int opt;
-        while ((opt = getopt(argc, argv, "uf:x:y:w:h:b:")) != -1) {
+        int long_index;
+        while ((opt = getopt_long(argc, argv, ":f:x:y:w:h:b:", long_options, &long_index)) != -1) {
+                if (help_flag == 1) {
+                        usage();
+                        exit(EXIT_SUCCESS);
+                }
+
                 switch (opt) {
-                        case 'u':
-                                printf(usage());
-                                exit(EXIT_SUCCESS);
                         case 'f':
                                 o->font = optarg;
                                 break;
@@ -80,8 +135,16 @@ parse_opts(int argc, char *argv[]) {
                         case 'b':
                                 o->border = atoi(optarg);
                                 break;
+                        case 't':
+                                o->fg = parse_color_string(optarg);
+                                break;
+                        case 'k':
+                                o->bg = parse_color_string(optarg);
+                                break;
+                        case ':':
+                                printf("Option requires an argument.\n");
                         default:
-                                printf(usage());
+                                usage();
                                 exit(EXIT_FAILURE);
                 }
         }
@@ -126,7 +189,7 @@ draw_text(const char *text)
         cairo_translate(cr, 0, (double) o->height / 2. - (double) height / 2.);
 
         /* Draw the text. */
-        cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+        cairo_set_source_rgb(cr, (double) o->fg.r / 255.0, (double) o->fg.g / 255.0, (double) o->fg.b / 255.0);
         pango_cairo_show_layout(cr, layout);
 
         cairo_surface_flush(surface);
@@ -167,19 +230,37 @@ int main(int argc, char *argv[])
 
         unsigned int mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
         unsigned int values[2];
-        values[0] = screen->white_pixel;
+        values[0] = o->bg.v;
         values[1] = XCB_EVENT_MASK_EXPOSURE;
 
         xcb_create_window(conn,
-                screen->root_depth,
-                window,
-                screen->root,
-                o->x, o->y,
-                o->width, o->height,
-                o->border,
-                XCB_WINDOW_CLASS_INPUT_OUTPUT,
-                screen->root_visual,
-                mask, values);
+                        screen->root_depth,
+                        window,
+                        screen->root,
+                        o->x, o->y,
+                        o->width, o->height,
+                        o->border,
+                        XCB_WINDOW_CLASS_INPUT_OUTPUT,
+                        screen->root_visual,
+                        mask, values);
+
+        xcb_change_property(conn,
+                        XCB_PROP_MODE_REPLACE,
+                        window,
+                        XCB_ATOM_WM_NAME,
+                        XCB_ATOM_STRING,
+                        8,
+                        strlen("xbox"),
+                        "xbox");
+
+        xcb_change_property(conn,
+                        XCB_PROP_MODE_REPLACE,
+                        window,
+                        XCB_ATOM_WM_CLASS,
+                        XCB_ATOM_STRING,
+                        8,
+                        strlen("xbox"),
+                        "xbox");
 
         /* Setup floating. */
         unsigned int override[1] = { OVERRIDE_REDIRECT };
@@ -203,7 +284,6 @@ int main(int argc, char *argv[])
         while((event = xcb_wait_for_event(conn))) {
                 switch (event->response_type & ~0x80) {
                         case XCB_EXPOSE:
-                                printf("Received expose event.\n");
                                 draw_text(text);
                                 xcb_flush(conn);
                                 break;
