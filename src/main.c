@@ -110,7 +110,7 @@ parse_opts(int argc, char *argv[])
         /* Set to given arguments or print information. */
         int opt;
         int long_index;
-        while ((opt = getopt_long(argc, argv, ":f:x:y:w:h:b:", long_options, &long_index)) != -1) {
+        while ((opt = getopt_long(argc, argv, ":f:x:y:w:h:b:t:k:", long_options, &long_index)) != -1) {
                 if (help_flag == 1) {
                         usage();
                         exit(EXIT_SUCCESS);
