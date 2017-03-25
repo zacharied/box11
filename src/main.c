@@ -121,9 +121,9 @@ draw_text(const char *text)
         pango_font_description_free(desc);
 
         /* Vertically center the text. */
-        PangoRectangle rect;
-        pango_layout_get_pixel_extents(layout, NULL, &rect);
-        cairo_translate(cr, 0, o->height / 2.0 - rect.height / 2.0 - rect.y);
+        int height;
+        pango_layout_get_pixel_size(layout, NULL, &height);
+        cairo_translate(cr, 0, (double) o->height / 2. - (double) height / 2.);
 
         /* Draw the text. */
         cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
@@ -139,7 +139,13 @@ int main(int argc, char *argv[])
         /* First, load input. */
         char text[CHAR_BUF];
         int length = read(0, text, sizeof(text));
-        text[length] = '\0';
+
+        /* Ignore trailing newlines. */
+        if (length > 0 && text[length - 1] == '\n') {
+                text[length - 1] = '\0';
+        } else {
+                text[length] = '\0';
+        }
 
         /* Initialize X connection so we can do stuff with X. */
         conn = xcb_connect(NULL, NULL);
