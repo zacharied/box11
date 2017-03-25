@@ -32,7 +32,9 @@
 "-b --border [BORDER]   Set the border width of the box\n"\
 "-t --fg-color [COLOR]  Draw text with the color COLOR\n"\
 "-k --bg-color [COLOR]  Draw box with the background color COLOR\n"\
-"Colors should be given in the form RRGGBB.\n"\
+"-a --align (l|c|r)     Horizontally align text left, center, or right\n"\
+"-p --padding [PADDING] Horizontally pad the text by PADDING pixels\n"\
+"\nColors should be given in the form RRGGBB.\n"\
 "All measurements are in pixels.\n"
 
 union rgb {
@@ -48,6 +50,8 @@ struct opts {
         const char *font;
         unsigned int x, y, width, height;
         unsigned int border;
+        PangoAlignment align;
+        int padding;
         union rgb fg, bg;
 };
 
@@ -91,6 +95,8 @@ parse_opts(int argc, char *argv[])
         o->border = DEFAULT_WINDOW_BORDER;
         o->fg = (union rgb)DEFAULT_FG;
         o->bg = (union rgb)DEFAULT_BG;
+        o->align = PANGO_ALIGN_CENTER;
+        o->padding = 0;
 
         static int help_flag;
 
@@ -104,13 +110,15 @@ parse_opts(int argc, char *argv[])
                 {"border", required_argument, 0, 'b'},
                 {"fg-color", required_argument, 0, 't'},
                 {"bg-color", required_argument, 0, 'k'},
+                {"align", required_argument, 0, 'a'},
+                {"padding", required_argument, 0, 'p'},
                 {0, 0, 0, 0}
         };
 
         /* Set to given arguments or print information. */
         int opt;
         int long_index;
-        while ((opt = getopt_long(argc, argv, ":f:x:y:w:h:b:t:k:", long_options, &long_index)) != -1) {
+        while ((opt = getopt_long(argc, argv, ":f:x:y:w:h:b:t:k:a:p:", long_options, &long_index)) != -1) {
                 if (help_flag == 1) {
                         usage();
                         exit(EXIT_SUCCESS);
@@ -140,6 +148,21 @@ parse_opts(int argc, char *argv[])
                                 break;
                         case 'k':
                                 o->bg = parse_color_string(optarg);
+                                break;
+                        case 'a':
+                                if (*optarg == 'l') {
+                                        o->align = PANGO_ALIGN_LEFT;
+                                } else if (*optarg == 'c') {
+                                        o->align = PANGO_ALIGN_CENTER;
+                                } else if (*optarg == 'r') {
+                                        o->align = PANGO_ALIGN_RIGHT;
+                                } else {
+                                        printf("Unrecognized alignment setting.\n");
+                                        exit(EXIT_FAILURE);
+                                }
+                                break;
+                        case 'p':
+                                o->padding = atoi(optarg);
                                 break;
                         case ':':
                                 printf("Option requires an argument.\n");
@@ -175,7 +198,10 @@ draw_text(const char *text)
         /* Initialize the Pango layout. */
         pango_layout_set_width(layout, o->width * PANGO_SCALE);
         pango_layout_set_height(layout, o->height * PANGO_SCALE);
-        pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
+        pango_layout_set_alignment(layout, o->align);
+
+        /* Account for padding. */
+        pango_layout_set_width(layout, pango_layout_get_width(layout) - o->padding * 2 * PANGO_SCALE);
 
         /* Set the text font. */
         pango_layout_set_text(layout, text, -1);
@@ -186,7 +212,7 @@ draw_text(const char *text)
         /* Vertically center the text. */
         int height;
         pango_layout_get_pixel_size(layout, NULL, &height);
-        cairo_translate(cr, 0, (double) o->height / 2. - (double) height / 2.);
+        cairo_translate(cr, o->padding, (double) o->height / 2. - (double) height / 2.);
 
         /* Draw the text. */
         cairo_set_source_rgb(cr, (double) o->fg.r / 255.0, (double) o->fg.g / 255.0, (double) o->fg.b / 255.0);
