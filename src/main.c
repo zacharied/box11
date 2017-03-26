@@ -34,8 +34,14 @@
 "-k --bg-color [COLOR]  Draw box with the background color COLOR\n"\
 "-a --align (l|c|r)     Horizontally align text left, center, or right\n"\
 "-p --padding [PADDING] Horizontally pad the text by PADDING pixels\n"\
+"-v --vertical-align (t|c|b)\n"\
+"                       Vertically align text top, center, or bottom\n"\
 "\nColors should be given in the form RRGGBB.\n"\
 "All measurements are in pixels.\n"
+
+enum vertical_align {
+        TOP, CENTER, BOTTOM
+};
 
 union rgb {
         struct {
@@ -46,11 +52,12 @@ union rgb {
         uint32_t v;
 };
 
-struct opts {
+struct config {
         const char *font;
         unsigned int x, y, width, height;
         unsigned int border;
         PangoAlignment align;
+        enum vertical_align vertical;
         int padding;
         union rgb fg, bg;
 };
@@ -64,7 +71,7 @@ static cairo_surface_t *surface;
 static cairo_t *cr;
 static PangoLayout *layout;
 
-static struct opts *o;
+static struct config *o;
 
 static
 void
@@ -82,9 +89,9 @@ parse_color_string(const char *color)
 
 static
 void
-parse_opts(int argc, char *argv[])
+parse_config(int argc, char *argv[])
 {
-        o = (struct opts*) malloc(sizeof(struct opts));
+        o = (struct config*) malloc(sizeof(struct config));
 
         /* Initialize default arguments. */
         o->font = DEFAULT_FONT;
@@ -96,6 +103,7 @@ parse_opts(int argc, char *argv[])
         o->fg = (union rgb)DEFAULT_FG;
         o->bg = (union rgb)DEFAULT_BG;
         o->align = PANGO_ALIGN_CENTER;
+        o->vertical = CENTER;
         o->padding = 0;
 
         static int help_flag;
@@ -112,13 +120,14 @@ parse_opts(int argc, char *argv[])
                 {"bg-color", required_argument, 0, 'k'},
                 {"align", required_argument, 0, 'a'},
                 {"padding", required_argument, 0, 'p'},
+                {"vertical-align", required_argument, 0, 'v'},
                 {0, 0, 0, 0}
         };
 
         /* Set to given arguments or print information. */
         int opt;
         int long_index;
-        while ((opt = getopt_long(argc, argv, ":f:x:y:w:h:b:t:k:a:p:", long_options, &long_index)) != -1) {
+        while ((opt = getopt_long(argc, argv, ":f:x:y:w:h:b:t:k:a:p:v:", long_options, &long_index)) != -1) {
                 if (help_flag == 1) {
                         usage();
                         exit(EXIT_SUCCESS);
@@ -156,6 +165,18 @@ parse_opts(int argc, char *argv[])
                                         o->align = PANGO_ALIGN_CENTER;
                                 } else if (*optarg == 'r') {
                                         o->align = PANGO_ALIGN_RIGHT;
+                                } else {
+                                        printf("Unrecognized alignment setting.\n");
+                                        exit(EXIT_FAILURE);
+                                }
+                                break;
+                        case 'v':
+                                if (*optarg == 't') {
+                                        o->vertical = TOP;
+                                } else if (*optarg == 'c') {
+                                        o->vertical = CENTER;
+                                } else if (*optarg == 'b') {
+                                        o->vertical = BOTTOM;
                                 } else {
                                         printf("Unrecognized alignment setting.\n");
                                         exit(EXIT_FAILURE);
@@ -212,7 +233,15 @@ draw_text(const char *text)
         /* Vertically center the text. */
         int height;
         pango_layout_get_pixel_size(layout, NULL, &height);
-        cairo_translate(cr, o->padding, (double) o->height / 2. - (double) height / 2.);
+
+        cairo_translate(cr, o->padding, 0);
+        if (o->vertical == TOP) {
+                cairo_translate(cr, 0, o->padding);
+        } else if (o->vertical == CENTER) {
+                cairo_translate(cr, 0, (double) o->height / 2. - (double) height / 2.);
+        } else {
+                cairo_translate(cr, 0, (double) o->height - o->padding - height);
+        }
 
         /* Draw the text. */
         cairo_set_source_rgb(cr, (double) o->fg.r / 255.0, (double) o->fg.g / 255.0, (double) o->fg.b / 255.0);
@@ -223,7 +252,7 @@ draw_text(const char *text)
 
 int main(int argc, char *argv[])
 {
-        parse_opts(argc, argv);
+        parse_config(argc, argv);
 
         /* First, load input. */
         char text[CHAR_BUF];
