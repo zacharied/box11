@@ -26,8 +26,8 @@ parse_config(int argc, char *argv[])
         static struct option long_options[] = {
                 {"help", no_argument, &flag_help, 1},
                 {"font", required_argument, 0, 'f'},
-                {"x", required_argument, 0, 'x'},
-                {"y", required_argument, 0, 'y'},
+                {"xpos", required_argument, 0, 'x'},
+                {"ypos", required_argument, 0, 'y'},
                 {"width", required_argument, 0, 'w'},
                 {"height", required_argument, 0, 'h'},
                 {"border", required_argument, 0, 'b'},
@@ -116,7 +116,7 @@ parse_config(int argc, char *argv[])
 union rgba
 parse_color_string(const char *c)
 {
-        /* Thanks lemonboy. */
+        /* Thanks @lemonboy. */
         union rgba temp = (union rgba)(uint32_t)strtoul(c, NULL, 16);
         return (union rgba){
                 .r = (temp.r * temp.a) / 255,
@@ -162,10 +162,16 @@ initialize_context(void)
         ctx.colormap = xcb_generate_id(ctx.conn);
         xcb_create_colormap(ctx.conn, XCB_COLORMAP_ALLOC_NONE, ctx.colormap, ctx.screen->root, ctx.visual->visual_id);
 
+        xcb_xrm_database_t *xrdb = xcb_xrm_database_from_default(ctx.conn);
+        xcb_xrm_resource_get_long(xrdb, "dpi", "xbox", &ctx.dpi);
+        ctx.scale = ctx.dpi / DPI_SCALE_DIVISOR;
+
         /* Cairo and Pango */
         ctx.surface = cairo_xcb_surface_create(ctx.conn, ctx.window, ctx.visual, config.width, config.height);
         ctx.cr = cairo_create(ctx.surface);
-        ctx.layout = pango_cairo_create_layout(ctx.cr);
+        ctx.pango = pango_cairo_create_context(ctx.cr);
+        pango_cairo_context_set_resolution(ctx.pango, (double) ctx.dpi);
+        ctx.layout = pango_layout_new(ctx.pango);
 }
 
 void
@@ -231,6 +237,7 @@ draw_text(const char *text)
 
         /* Account for padding. */
         pango_layout_set_width(ctx.layout, pango_layout_get_width(ctx.layout) - config.padding * 2 * PANGO_SCALE);
+        pango_layout_set_alignment(ctx.layout, config.align);
 
         /* Set the text font. */
         pango_layout_set_text(ctx.layout, text, -1);

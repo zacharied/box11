@@ -4,7 +4,7 @@ CC = gcc
 CFLAGS = -g -Wall -Wextra
 
 LIBS = pango
-LD_LIBS = xcb pangocairo
+LD_LIBS = xcb xcb-xrm pangocairo
 
 SOURCE_DIR = src
 TARGET_DIR = build

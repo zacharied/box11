@@ -4,6 +4,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <xcb/xcb.h>
+#include <xcb/xcb_xrm.h>
 #include <cairo/cairo-xcb.h>
 #include <pango-1.0/pango/pangocairo.h>
 
@@ -21,8 +22,10 @@
 "-p --padding [PADDING] Horizontally pad the text by PADDING pixels\n"\
 "-v --vertical-align (t|c|b)\n"\
 "                       Vertically align text top, center, or bottom\n"\
-"\nColors should be given in the form RRGGBB.\n"\
+"\nColors should be given in the form AARRGGBB.\n"\
 "All measurements are in pixels.\n"
+
+#define DPI_SCALE_DIVISOR 96
 
 /* An RGBA color map represented as a 32-bit integer. */
 union rgba {
@@ -51,7 +54,11 @@ struct xcb_context {
 
         cairo_t *cr;
         cairo_surface_t *surface;
+        PangoContext *pango;
         PangoLayout *layout;
+
+        long dpi;
+        uint32_t scale;
 };
 
 /* Given command-line arguments. */
