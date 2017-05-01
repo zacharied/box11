@@ -8,6 +8,8 @@ parse_config(int argc, char *argv[])
 {
         /* Initialize default arguments. */
         config.font = "Sans 30";
+        config.autosize = false;
+        config.return_autosize = false;
         config.x = 30;
         config.y = 30;
         config.width = 200;
@@ -22,10 +24,13 @@ parse_config(int argc, char *argv[])
 
         static int flag_help;
         static int flag_c_border;
+        static int flag_return_autosize;
 
         static struct option long_options[] = {
                 {"help", no_argument, &flag_help, 1},
                 {"font", required_argument, 0, 'f'},
+                {"autosize", no_argument, 0, 'u'},
+                {"return-autosize", no_argument, &flag_return_autosize, 1},
                 {"xpos", required_argument, 0, 'x'},
                 {"ypos", required_argument, 0, 'y'},
                 {"width", required_argument, 0, 'w'},
@@ -43,7 +48,7 @@ parse_config(int argc, char *argv[])
         /* Set to given arguments or print information. */
         int opt;
         int long_index;
-        while ((opt = getopt_long(argc, argv, ":f:x:y:w:h:b:t:k:p:a:v:", long_options, &long_index)) != -1) {
+        while ((opt = getopt_long(argc, argv, "f:ux:y:w:h:b:t:k:p:a:v:", long_options, &long_index)) != -1) {
                 if (flag_help == 1) {
                         printf(USAGE);
                         exit(EXIT_SUCCESS);
@@ -54,9 +59,16 @@ parse_config(int argc, char *argv[])
                         config.c_border = parse_color_string(optarg);
                 }
 
+                if (flag_return_autosize == 1) {
+                        config.return_autosize = true;
+                }
+
                 switch (opt) {
                         case 'f':
                                 config.font = optarg;
+                                break;
+                        case 'u':
+                                config.autosize = true;
                                 break;
                         case 'x':
                                 config.x = atoi(optarg);
@@ -110,6 +122,15 @@ parse_config(int argc, char *argv[])
                                 printf("Option requires an argument.\n");
                                 exit(EXIT_FAILURE);
                 }
+        }
+
+        /* Provide warnings for ignored parameters. */
+        if (config.autosize && (config.v_align != CENTER || config.align != PANGO_ALIGN_CENTER)) {
+                fprintf(stderr, "Warning: Alignment settings are ignored when the box is autosized.");
+        }
+
+        if (config.return_autosize && !config.autosize) {
+                fprintf(stderr, "Error: Cannot print autosize dimensions if autosize is not enabled!\n");
         }
 }
 
@@ -231,30 +252,51 @@ event_loop(void)
 void
 draw_text(const char *text)
 {
-        /* Initialize the Pango layout. */
-        pango_layout_set_width(ctx.layout, config.width * PANGO_SCALE);
-        pango_layout_set_height(ctx.layout, config.height * PANGO_SCALE);
-
-        /* Account for padding. */
-        pango_layout_set_width(ctx.layout, pango_layout_get_width(ctx.layout) - config.padding * 2 * PANGO_SCALE);
-        pango_layout_set_alignment(ctx.layout, config.align);
-
         /* Set the text font. */
         pango_layout_set_text(ctx.layout, text, -1);
         PangoFontDescription *desc = pango_font_description_from_string(config.font);
         pango_layout_set_font_description(ctx.layout, desc);
         pango_font_description_free(desc);
 
-        /* Vertically center the text. */
-        int height;
-        pango_layout_get_pixel_size(ctx.layout, NULL, &height);
-        cairo_translate(ctx.cr, config.padding, 0);
-        if (config.v_align == TOP) {
+        /* TODO: There's some redundancy in this section. */
+        if (config.autosize) {
+                PangoRectangle area;
+                pango_layout_get_pixel_extents(ctx.layout, NULL, &area);
+                pango_layout_set_width(ctx.layout, area.width);
+                pango_layout_set_height(ctx.layout, area.height * g_slist_length(pango_layout_get_lines_readonly(ctx.layout)));
+                cairo_surface_destroy(ctx.surface);
+                ctx.surface = cairo_xcb_surface_create(ctx.conn, ctx.window, ctx.visual, area.width + config.padding * 2, area.height + config.padding * 2);
+                ctx.cr = cairo_create(ctx.surface);
+
+                const uint32_t values[] = { area.width + config.padding * 2, area.height + config.padding * 2 };
+                xcb_configure_window(ctx.conn, ctx.window, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
+
                 cairo_translate(ctx.cr, 0, config.padding);
-        } else if (config.v_align == CENTER) {
-                cairo_translate(ctx.cr, 0, (double) config.height / 2. - (double) height / 2.);
+
+                if (config.return_autosize) {
+                        printf("AUTOSIZE:%dx%d\n", values[0], values[1]);
+                }
         } else {
-                cairo_translate(ctx.cr, 0, (double) config.height - config.padding - height);
+                /* Initialize the Pango layout. */
+                pango_layout_set_width(ctx.layout, config.width * PANGO_SCALE);
+                pango_layout_set_height(ctx.layout, config.height * PANGO_SCALE);
+
+                /* Account for padding. */
+                pango_layout_set_width(ctx.layout, pango_layout_get_width(ctx.layout) - config.padding * 2 * PANGO_SCALE);
+                pango_layout_set_alignment(ctx.layout, config.align);
+
+                /* Vertically center the text. */
+                int height;
+                pango_layout_get_pixel_size(ctx.layout, NULL, &height);
+
+                cairo_translate(ctx.cr, config.padding, 0);
+                if (config.v_align == TOP) {
+                        cairo_translate(ctx.cr, 0, config.padding);
+                } else if (config.v_align == CENTER) {
+                        cairo_translate(ctx.cr, 0, (double) config.height / 2. - (double) height / 2.);
+                } else {
+                        cairo_translate(ctx.cr, 0, (double) config.height - config.padding - height);
+                }
         }
 
         cairo_translate(ctx.cr, config.padding, 0);
