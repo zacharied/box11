@@ -7,7 +7,7 @@ void
 parse_config(int argc, char *argv[])
 {
         /* Initialize default arguments. */
-        config.font = "Sans 30";
+        config.font = "Sans 20";
         config.autosize = false;
         config.return_autosize = false;
         config.x = 30;
@@ -55,7 +55,6 @@ parse_config(int argc, char *argv[])
                 }
 
                 if (flag_c_border == 1) {
-                        printf("Setting border color.\n");
                         config.c_border = parse_color_string(optarg);
                 }
 
@@ -102,7 +101,7 @@ parse_config(int argc, char *argv[])
                                 } else if (*optarg == 'r') {
                                         config.align = PANGO_ALIGN_RIGHT;
                                 } else {
-                                        printf("Unrecognized alignment setting.\n");
+                                        fprintf(stderr, "Unrecognized alignment setting.\n");
                                         exit(EXIT_FAILURE);
                                 }
                                 break;
@@ -114,13 +113,14 @@ parse_config(int argc, char *argv[])
                                 } else if (*optarg == 'b') {
                                         config.v_align = BOTTOM;
                                 } else {
-                                        printf("Unrecognized alignment setting.\n");
+                                        fprintf(stderr, "Unrecognized alignment setting.\n");
                                         exit(EXIT_FAILURE);
                                 }
                                 break;
                         case ':':
-                                printf("Option requires an argument.\n");
+                                fprintf(stderr, "Option requires an argument.\n");
                                 exit(EXIT_FAILURE);
+                                break;
                 }
         }
 
@@ -131,6 +131,7 @@ parse_config(int argc, char *argv[])
 
         if (config.return_autosize && !config.autosize) {
                 fprintf(stderr, "Error: Cannot print autosize dimensions if autosize is not enabled!\n");
+                exit(EXIT_FAILURE);
         }
 }
 
@@ -210,7 +211,6 @@ create_window(void)
         };
 
         int depth = (ctx.visual->visual_id == ctx.screen->root_visual) ? XCB_COPY_FROM_PARENT : 32;
-        printf("Using a %d-bit depth for drawing.\n", depth);
         xcb_create_window(ctx.conn, depth,
                         ctx.window, ctx.screen->root,
                         config.x, config.y, config.width, config.height, config.border,
