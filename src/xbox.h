@@ -12,7 +12,7 @@
 #define USAGE "Usage: xbox [OPTIONS]\n"\
 "   --help              Show this help\n"\
 "-f --font [FONT]       Print text with font FONT\n"\
-"-u --autosize          Adjust the window dimensions to fit the text. Overrides other positioning arguments\n"\
+"-u --autosize (h)(v)   Adjust the window dimensions to fit the text. Overrides other positioning arguments\n"\
 "   --return-autosize   Print the box size calculated by --autosize in the format AUTOSIZE:WIDTHxHEIGHT\n"\
 "-x --xpos [X]          Set the x-coordinate of the box\n"\
 "-y --ypos [Y]          Set the y-coordinate of the box\n"\
@@ -67,7 +67,7 @@ struct xcb_context {
 /* Given command-line arguments. */
 struct config {
         const char *font;
-        bool autosize, return_autosize;
+        bool autosize_h, autosize_v;
         uint32_t x, y, width, height;
         uint32_t border;
         uint32_t padding;

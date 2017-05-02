@@ -3,13 +3,26 @@
 struct xcb_context ctx;
 struct config config;
 
+static void
+config_parse_autosize_args(const char *arg) {
+        for (unsigned int i = 0; i < strlen(arg); i++) {
+                if (arg[i] == 'h') {
+                        config.autosize_h = true;
+                } else if (arg[i] == 'v') {
+                        config.autosize_v = true;
+                } else {
+                        fprintf(stderr, "Unrecognized autosize direction: \"%c\".\n", arg[i]);
+                }
+        }
+}
+
 void
 parse_config(int argc, char *argv[])
 {
         /* Initialize default arguments. */
         config.font = "Sans 20";
-        config.autosize = false;
-        config.return_autosize = false;
+        config.autosize_h = false;
+        config.autosize_v = false;
         config.x = 30;
         config.y = 30;
         config.width = 200;
@@ -24,13 +37,11 @@ parse_config(int argc, char *argv[])
 
         static int flag_help;
         static int flag_c_border;
-        static int flag_return_autosize;
 
         static struct option long_options[] = {
                 {"help", no_argument, &flag_help, 1},
                 {"font", required_argument, 0, 'f'},
-                {"autosize", no_argument, 0, 'u'},
-                {"return-autosize", no_argument, &flag_return_autosize, 1},
+                {"autosize", required_argument, 0, 'u'},
                 {"xpos", required_argument, 0, 'x'},
                 {"ypos", required_argument, 0, 'y'},
                 {"width", required_argument, 0, 'w'},
@@ -48,7 +59,7 @@ parse_config(int argc, char *argv[])
         /* Set to given arguments or print information. */
         int opt;
         int long_index;
-        while ((opt = getopt_long(argc, argv, "f:ux:y:w:h:b:t:k:p:a:v:", long_options, &long_index)) != -1) {
+        while ((opt = getopt_long(argc, argv, "f:u:x:y:w:h:b:t:k:p:a:v:", long_options, &long_index)) != -1) {
                 if (flag_help == 1) {
                         printf(USAGE);
                         exit(EXIT_SUCCESS);
@@ -58,16 +69,12 @@ parse_config(int argc, char *argv[])
                         config.c_border = parse_color_string(optarg);
                 }
 
-                if (flag_return_autosize == 1) {
-                        config.return_autosize = true;
-                }
-
                 switch (opt) {
                         case 'f':
                                 config.font = optarg;
                                 break;
                         case 'u':
-                                config.autosize = true;
+                                config_parse_autosize_args(optarg);
                                 break;
                         case 'x':
                                 config.x = atoi(optarg);
@@ -125,13 +132,8 @@ parse_config(int argc, char *argv[])
         }
 
         /* Provide warnings for ignored parameters. */
-        if (config.autosize && (config.v_align != CENTER || config.align != PANGO_ALIGN_CENTER)) {
-                fprintf(stderr, "Warning: Alignment settings are ignored when the box is autosized.");
-        }
-
-        if (config.return_autosize && !config.autosize) {
-                fprintf(stderr, "Error: Cannot print autosize dimensions if autosize is not enabled!\n");
-                exit(EXIT_FAILURE);
+        if ((config.autosize_h && config.align != PANGO_ALIGN_CENTER) || (config.autosize_v && config.v_align != CENTER)) {
+                fprintf(stderr, "Warning: Alignment settings are ignored when the box is autosized.\n");
         }
 }
 
@@ -249,6 +251,43 @@ event_loop(void)
         }
 }
 
+static
+void
+autosize_bounds()
+{
+        PangoRectangle area;
+        pango_layout_get_pixel_extents(ctx.layout, NULL, &area);
+
+        cairo_surface_destroy(ctx.surface);
+
+        uint32_t window_dimens[2] = { 0, 0 };
+
+        if (config.autosize_h) {
+                const uint32_t value[] = { area.width + config.padding * 2 };
+                xcb_configure_window(ctx.conn, ctx.window, XCB_CONFIG_WINDOW_WIDTH, value);
+
+                window_dimens[0] = value[0];
+        } else {
+                window_dimens[0] = config.width + config.padding * 2;
+        }
+
+        if (config.autosize_v) {
+                const uint32_t value[] = { area.height + config.padding * 2 };
+                xcb_configure_window(ctx.conn, ctx.window, XCB_CONFIG_WINDOW_HEIGHT, value);
+
+                window_dimens[1] = value[0];
+        } else {
+                window_dimens[1] = config.height + config.padding * 2;
+        }
+
+        ctx.surface = cairo_xcb_surface_create(ctx.conn, ctx.window, ctx.visual, window_dimens[0], window_dimens[1]);
+        ctx.cr = cairo_create(ctx.surface);
+
+        cairo_translate(ctx.cr, 0, config.padding);
+
+        printf("AUTOSIZE:%dx%d\n", window_dimens[0], window_dimens[1]);
+}
+
 void
 draw_text(const char *text)
 {
@@ -258,38 +297,21 @@ draw_text(const char *text)
         pango_layout_set_font_description(ctx.layout, desc);
         pango_font_description_free(desc);
 
-        /* TODO: There's some redundancy in this section. */
-        if (config.autosize) {
-                PangoRectangle area;
-                pango_layout_get_pixel_extents(ctx.layout, NULL, &area);
-                pango_layout_set_width(ctx.layout, area.width);
-                pango_layout_set_height(ctx.layout, area.height * g_slist_length(pango_layout_get_lines_readonly(ctx.layout)));
-                cairo_surface_destroy(ctx.surface);
-                ctx.surface = cairo_xcb_surface_create(ctx.conn, ctx.window, ctx.visual, area.width + config.padding * 2, area.height + config.padding * 2);
-                ctx.cr = cairo_create(ctx.surface);
+        if (config.autosize_h || config.autosize_v) {
+                autosize_bounds();
+        }
 
-                const uint32_t values[] = { area.width + config.padding * 2, area.height + config.padding * 2 };
-                xcb_configure_window(ctx.conn, ctx.window, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
-
-                cairo_translate(ctx.cr, 0, config.padding);
-
-                if (config.return_autosize) {
-                        printf("AUTOSIZE:%dx%d\n", values[0], values[1]);
-                }
-        } else {
-                /* Initialize the Pango layout. */
+        if (!config.autosize_h) {
                 pango_layout_set_width(ctx.layout, config.width * PANGO_SCALE);
+                pango_layout_set_alignment(ctx.layout, config.align);
+        }
+
+        if (!config.autosize_v) {
                 pango_layout_set_height(ctx.layout, config.height * PANGO_SCALE);
 
-                /* Account for padding. */
-                pango_layout_set_width(ctx.layout, pango_layout_get_width(ctx.layout) - config.padding * 2 * PANGO_SCALE);
-                pango_layout_set_alignment(ctx.layout, config.align);
-
-                /* Vertically center the text. */
                 int height;
                 pango_layout_get_pixel_size(ctx.layout, NULL, &height);
 
-                cairo_translate(ctx.cr, config.padding, 0);
                 if (config.v_align == TOP) {
                         cairo_translate(ctx.cr, 0, config.padding);
                 } else if (config.v_align == CENTER) {
@@ -299,6 +321,7 @@ draw_text(const char *text)
                 }
         }
 
+        /* Draw text offset by padding. */
         cairo_translate(ctx.cr, config.padding, 0);
 
         /* Draw the text. */
