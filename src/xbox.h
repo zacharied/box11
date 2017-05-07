@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <getopt.h>
+#include <signal.h>
+#include <pthread.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_xrm.h>
 #include <cairo/cairo-xcb.h>

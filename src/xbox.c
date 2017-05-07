@@ -244,10 +244,21 @@ create_window(void)
 void
 event_loop(void)
 {
-        xcb_generic_event_t *event;
-        while ((event = xcb_wait_for_event(ctx.conn)) != NULL) {
-                free(event);
+        char text[1024];
+        for (;;) {
+                int len = read(0, text, 1024);
+                if (text[len - 1] == '\n') {
+                        text[len - 1] = '\0';
+                } else {
+                        text[len] = '\0';
+                }
+
+                draw_text(text);
                 xcb_flush(ctx.conn);
+
+                if (text[0] == 0) {
+                        pause();
+                }
         }
 }
 
@@ -291,8 +302,15 @@ autosize_bounds()
 void
 draw_text(const char *text)
 {
+        /* Reset the surface. */
+        cairo_save(ctx.cr);
+        cairo_set_source_rgba(ctx.cr, (double) config.c_bg.r / 255.0, (double) config.c_bg.g / 255.0, (double) config.c_bg.b / 255.0, (double) config.c_bg.a / 255.0);
+        cairo_set_operator(ctx.cr, CAIRO_OPERATOR_SOURCE);
+        cairo_paint(ctx.cr);
+        cairo_restore(ctx.cr);
+
         /* Set the text font. */
-        pango_layout_set_text(ctx.layout, text, -1);
+        pango_layout_set_markup(ctx.layout, text, -1);
         PangoFontDescription *desc = pango_font_description_from_string(config.font);
         pango_layout_set_font_description(ctx.layout, desc);
         pango_font_description_free(desc);
@@ -305,6 +323,8 @@ draw_text(const char *text)
                 pango_layout_set_width(ctx.layout, config.width * PANGO_SCALE);
                 pango_layout_set_alignment(ctx.layout, config.align);
         }
+
+        cairo_save(ctx.cr);
 
         if (!config.autosize_v) {
                 pango_layout_set_height(ctx.layout, config.height * PANGO_SCALE);
@@ -321,6 +341,7 @@ draw_text(const char *text)
                 }
         }
 
+
         /* Draw text offset by padding. */
         cairo_translate(ctx.cr, config.padding, 0);
 
@@ -329,6 +350,8 @@ draw_text(const char *text)
         pango_cairo_show_layout(ctx.cr, ctx.layout);
 
         cairo_surface_flush(ctx.surface);
+
+        cairo_restore(ctx.cr);
 }
 
 int
@@ -336,21 +359,11 @@ main(int argc, char *argv[])
 {
         parse_config(argc, argv);
 
-        char text[1024];
-        int len = read(0, text, 1024);
-        if (text[len - 1] == '\n') {
-                text[len - 1] = '\0';
-        } else {
-                text[len] = '\0';
-        }
-
         initialize_context();
 
         create_window();
 
         xcb_map_window(ctx.conn, ctx.window);
-        draw_text(text);
-        xcb_flush(ctx.conn);
 
         event_loop();
         xcb_disconnect(ctx.conn);
