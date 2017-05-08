@@ -36,7 +36,6 @@ parse_config(int argc, char *argv[])
         config.v_align = CENTER;
 
         static int flag_help;
-        static int flag_c_border;
 
         static struct option long_options[] = {
                 {"help", no_argument, &flag_help, 1},
@@ -49,7 +48,7 @@ parse_config(int argc, char *argv[])
                 {"border", required_argument, 0, 'b'},
                 {"fg-color", required_argument, 0, 't'},
                 {"bg-color", required_argument, 0, 'k'},
-                {"border-color", required_argument, &flag_c_border, 1},
+                {"border-color", required_argument, 0, 0},
                 {"padding", required_argument, 0, 'p'},
                 {"align", required_argument, 0, 'a'},
                 {"vertical-align", required_argument, 0, 'v'},
@@ -65,11 +64,12 @@ parse_config(int argc, char *argv[])
                         exit(EXIT_SUCCESS);
                 }
 
-                if (flag_c_border == 1) {
-                        config.c_border = parse_color_string(optarg);
-                }
-
                 switch (opt) {
+                        case 0:
+                                if (strcmp(long_options[long_index].name, "border-color") == 0) {
+                                        config.c_border = parse_color_string(optarg);
+                                }
+                                break;
                         case 'f':
                                 config.font = optarg;
                                 break;
