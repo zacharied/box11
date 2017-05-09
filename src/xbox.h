@@ -1,21 +1,12 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
-#include <getopt.h>
-#include <signal.h>
-#include <pthread.h>
+#include <stdint.h>
 #include <xcb/xcb.h>
-#include <xcb/xcb_xrm.h>
-#include <cairo/cairo-xcb.h>
 #include <pango-1.0/pango/pangocairo.h>
 
 #define USAGE "Usage: xbox [OPTIONS]\n"\
 "   --help              Show this help\n"\
 "-f --font [FONT]       Print text with font FONT\n"\
 "-u --autosize (h)(v)   Adjust the window dimensions to fit the text. Overrides other positioning arguments\n"\
-"   --return-autosize   Print the box size calculated by --autosize in the format AUTOSIZE:WIDTHxHEIGHT\n"\
 "-x --xpos [X]          Set the x-coordinate of the box\n"\
 "-y --ypos [Y]          Set the y-coordinate of the box\n"\
 "-w --width [WIDTH]     Set the width of the box\n"\

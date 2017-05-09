@@ -1,11 +1,21 @@
 #include "xbox.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <getopt.h>
+
+#include <xcb/xcb_xrm.h>
+#include <cairo/cairo-xcb.h>
+
 struct xcb_context ctx;
 struct config config;
 
 static void
-config_parse_autosize_args(const char *arg) {
-        for (unsigned int i = 0; i < strlen(arg); i++) {
+config_parse_autosize_args(const char *arg)
+{
+        for (int i = 0; arg[i] != '\0'; i++) {
                 if (arg[i] == 'h') {
                         config.autosize_h = true;
                 } else if (arg[i] == 'v') {
@@ -55,9 +65,13 @@ parse_config(int argc, char *argv[])
                 {0, 0, 0, 0}
         };
 
-        /* Set to given arguments or print information. */
         int opt;
         int long_index;
+
+        inline bool is_longopt(const char *name) {
+                return strcmp(long_options[long_index].name, name) == 0;
+        }
+
         while ((opt = getopt_long(argc, argv, "f:u:x:y:w:h:b:t:k:p:a:v:", long_options, &long_index)) != -1) {
                 if (flag_help == 1) {
                         printf(USAGE);
@@ -66,7 +80,7 @@ parse_config(int argc, char *argv[])
 
                 switch (opt) {
                         case 0:
-                                if (strcmp(long_options[long_index].name, "border-color") == 0) {
+                                if (is_longopt("border-color")) {
                                         config.c_border = parse_color_string(optarg);
                                 }
                                 break;
@@ -295,8 +309,6 @@ autosize_bounds()
         ctx.cr = cairo_create(ctx.surface);
 
         cairo_translate(ctx.cr, 0, config.padding);
-
-        printf("AUTOSIZE:%dx%d\n", window_dimens[0], window_dimens[1]);
 }
 
 void
@@ -366,6 +378,8 @@ main(int argc, char *argv[])
         xcb_map_window(ctx.conn, ctx.window);
 
         event_loop();
+
         xcb_disconnect(ctx.conn);
+
         return 0;
 }
