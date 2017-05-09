@@ -253,12 +253,12 @@ event_loop(void)
                         text[len] = '\0';
                 }
 
-                draw_text(text);
-                xcb_flush(ctx.conn);
-
                 if (text[0] == 0) {
                         pause();
                 }
+
+                draw_text(text);
+                xcb_flush(ctx.conn);
         }
 }
 
