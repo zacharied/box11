@@ -13,9 +13,18 @@ SOURCES := $(wildcard $(SOURCE_DIR)/*.c)
 HEADERS := $(wildcard $(SOURCE_DIR)/*.h)
 OUTPUT := $(TARGET_DIR)/$(NAME)
 
+INSTALL_PATH ?= /usr/bin
+
 $(NAME):
 	$(CC) $(CFLAGS) -o $(OUTPUT) $(SOURCES) $(HEADERS) `pkg-config --cflags $(LIBS) --libs $(LD_LIBS)`
 
-.PHONY: clean
 clean:
 	rm -r $(TARGET_DIR) $(OUTPUT)
+
+install:
+	cp $(OUTPUT) $(INSTALL_PATH)
+
+uninstall:
+	rm $(INSTALL_PATH)/$(NAME)
+
+.PHONY: clean install uninstall
