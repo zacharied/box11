@@ -3,7 +3,7 @@
 #include <xcb/xcb.h>
 #include <pango-1.0/pango/pangocairo.h>
 
-#define USAGE "Usage: xbox [OPTIONS]\n"\
+#define USAGE "Usage: box11 [OPTIONS]\n"\
 "   --help              Show this help\n"\
 "-f --font [FONT]       Print text with font FONT\n"\
 "-u --autosize (h)(v)   Adjust the window dimensions to fit the text. Overrides other positioning arguments\n"\

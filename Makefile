@@ -1,4 +1,4 @@
-NAME = xbox
+NAME = box11
 
 CC = gcc
 CFLAGS = -g -Wall -Wextra
