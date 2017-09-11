@@ -292,6 +292,7 @@ autosize_bounds()
                 xcb_configure_window(ctx.conn, ctx.window, XCB_CONFIG_WINDOW_WIDTH, value);
 
                 window_dimens[0] = value[0];
+
         } else {
                 window_dimens[0] = config.width + config.padding * 2;
         }
@@ -304,6 +305,8 @@ autosize_bounds()
         } else {
                 window_dimens[1] = config.height + config.padding * 2;
         }
+
+        printf("%dx%d\n", window_dimens[0], window_dimens[1]);
 
         ctx.surface = cairo_xcb_surface_create(ctx.conn, ctx.window, ctx.visual, window_dimens[0], window_dimens[1]);
         ctx.cr = cairo_create(ctx.surface);
