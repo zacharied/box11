@@ -25,48 +25,48 @@
 
 /* An RGBA color map represented as a 32-bit integer. */
 union rgba {
-        struct {
-                uint8_t b;
-                uint8_t g;
-                uint8_t r;
-                uint8_t a;
-        };
-        uint32_t val;
+    struct {
+        uint8_t b;
+        uint8_t g;
+        uint8_t r;
+        uint8_t a;
+    };
+    uint32_t val;
 };
 
 typedef enum vertical_align {
-        TOP,
-        CENTER,
-        BOTTOM
+    TOP,
+    CENTER,
+    BOTTOM
 } vertical_align;
 
 /* Data necessary for interacting with the X server. */
 struct xcb_context {
-        xcb_connection_t *conn;
-        xcb_screen_t *screen;
-        xcb_visualtype_t *visual;
-        xcb_window_t window;
-        xcb_colormap_t colormap;
+    xcb_connection_t *conn;
+    xcb_screen_t *screen;
+    xcb_visualtype_t *visual;
+    xcb_window_t window;
+    xcb_colormap_t colormap;
 
-        cairo_t *cr;
-        cairo_surface_t *surface;
-        PangoContext *pango;
-        PangoLayout *layout;
+    cairo_t *cr;
+    cairo_surface_t *surface;
+    PangoContext *pango;
+    PangoLayout *layout;
 
-        long dpi;
-        uint32_t scale;
+    long dpi;
+    uint32_t scale;
 };
 
 /* Given command-line arguments. */
 struct config {
-        const char *font;
-        bool autosize_h, autosize_v;
-        uint32_t x, y, width, height;
-        uint32_t border;
-        uint32_t padding;
-        union rgba c_fg, c_bg, c_border;
-        PangoAlignment align;
-        vertical_align v_align;
+    const char *font;
+    bool autosize_h, autosize_v;
+    uint32_t x, y, width, height;
+    uint32_t border;
+    uint32_t padding;
+    union rgba c_fg, c_bg, c_border;
+    PangoAlignment align;
+    vertical_align v_align;
 };
 
 void
