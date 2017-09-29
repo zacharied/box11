@@ -201,7 +201,7 @@ initialize_context(void)
     xcb_create_colormap(ctx.conn, XCB_COLORMAP_ALLOC_NONE, ctx.colormap, ctx.screen->root, ctx.visual->visual_id);
 
     xcb_xrm_database_t *xrdb = xcb_xrm_database_from_default(ctx.conn);
-    xcb_xrm_resource_get_long(xrdb, "dpi", "box11", &ctx.dpi);
+    xcb_xrm_resource_get_long(xrdb, "dpi", APP_NAME, &ctx.dpi);
     ctx.scale = ctx.dpi / DPI_SCALE_DIVISOR;
 
     /* Cairo and Pango */
@@ -240,8 +240,8 @@ create_window(void)
             XCB_ATOM_WM_NAME,
             XCB_ATOM_STRING,
             8,
-            strlen("box11"),
-            "box11");
+            strlen(APP_NAME),
+            APP_NAME);
 
     xcb_change_property(ctx.conn,
             XCB_PROP_MODE_REPLACE,
@@ -249,8 +249,8 @@ create_window(void)
             XCB_ATOM_WM_CLASS,
             XCB_ATOM_STRING,
             8,
-            strlen("box11"),
-            "box11");
+            strlen(APP_NAME),
+            APP_NAME);
 
     xcb_free_colormap(ctx.conn, ctx.colormap);
 }
