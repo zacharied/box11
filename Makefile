@@ -1,7 +1,7 @@
 NAME = box11
 
 CC = gcc
-CFLAGS = -g -Wall -Wextra
+CFLAGS = -g -Wall -Wextra -O3
 
 INCLUDES = pango
 LIBS = xcb xcb-xrm pangocairo
