@@ -30,20 +30,20 @@ void
 parse_config(int argc, char *argv[])
 {
     /* Initialize default arguments. */
-    config.font = "Sans 20";
+    config.font       = "Sans 20";
     config.autosize_h = false;
     config.autosize_v = false;
-    config.x = 30;
-    config.y = 30;
-    config.width = 200;
-    config.height = 50;
-    config.border = 5;
-    config.c_fg = (union rgba)(uint32_t)0xFFFFFFFFU;
-    config.c_bg = (union rgba)(uint32_t)0x00000000U;
-    config.c_border = (union rgba)(uint32_t)0x88888888U;
-    config.padding = 0;
-    config.align = PANGO_ALIGN_CENTER;
-    config.v_align = CENTER;
+    config.x          = 30;
+    config.y          = 30;
+    config.width      = 200;
+    config.height     = 50;
+    config.border     = 5;
+    config.c_fg       = (union rgba)(uint32_t)0xFFFFFFFFU;
+    config.c_bg       = (union rgba)(uint32_t)0xFF888888U;
+    config.c_border   = (union rgba)(uint32_t)0x88888888U;
+    config.padding    = 0;
+    config.align      = PANGO_ALIGN_CENTER;
+    config.v_align    = CENTER;
 
     static int flag_help;
 
@@ -158,9 +158,9 @@ parse_color_string(const char *c)
     union rgba temp = (union rgba)(uint32_t)strtoul(c, NULL, 16);
     return (union rgba){
         .r = (temp.r * temp.a) / 255,
-            .g = (temp.g * temp.a) / 255,
-            .b = (temp.b * temp.a) / 255,
-            .a = temp.a
+        .g = (temp.g * temp.a) / 255,
+        .b = (temp.b * temp.a) / 255,
+        .a = temp.a
     };
 }
 

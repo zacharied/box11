@@ -5,7 +5,8 @@
 
 #define APP_NAME "box11"
 
-#define USAGE "Usage: box11 [OPTIONS]\n"\
+#define USAGE \
+"Usage: box11 [OPTIONS]\n"\
 "   --help              Show this help\n"\
 "-f --font [FONT]       Print text with font FONT\n"\
 "-u --autosize (h)(v)   Adjust the window dimensions to fit the text. Overrides other positioning arguments\n"\
