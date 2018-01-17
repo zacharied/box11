@@ -307,6 +307,7 @@ autosize_bounds()
     }
 
     printf("%dx%d\n", window_dimens[0], window_dimens[1]);
+    fflush(stdout);
 
     ctx.surface = cairo_xcb_surface_create(ctx.conn, ctx.window, ctx.visual, window_dimens[0], window_dimens[1]);
     ctx.cr = cairo_create(ctx.surface);
