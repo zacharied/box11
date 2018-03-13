@@ -148,6 +148,10 @@ parse_config(int argc, char *argv[])
     if ((config.autosize_h && config.align != PANGO_ALIGN_CENTER) || (config.autosize_v && config.v_align != CENTER)) {
         fprintf(stderr, "Warning: Alignment settings are ignored when the box is autosized.\n");
     }
+
+    if (config.bounds_only && !(config.autosize_h || config.autosize_v)) {
+        fprintf(stderr, "Warning: Will not print bounds if box is not autosized.\n");
+    }
 }
 
 union rgba
