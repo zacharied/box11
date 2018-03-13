@@ -47,6 +47,6 @@ the `box11` executable is installed.
 
 This project could be expanded in a number of ways:
 
+* Manpage
 * Image rendering support
-* Come up with a better name (classic UNIX commands tend not to have numbers in executable names)
 * User input (probably better suited to another project like `dmenu`)
