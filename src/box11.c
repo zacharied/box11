@@ -30,25 +30,27 @@ void
 parse_config(int argc, char *argv[])
 {
     /* Initialize default arguments. */
-    config.font       = "Sans 20";
-    config.autosize_h = false;
-    config.autosize_v = false;
-    config.x          = 30;
-    config.y          = 30;
-    config.width      = 200;
-    config.height     = 50;
-    config.border     = 5;
-    config.c_fg       = (union rgba)(uint32_t)0xFFFFFFFFU;
-    config.c_bg       = (union rgba)(uint32_t)0xFF888888U;
-    config.c_border   = (union rgba)(uint32_t)0x88888888U;
-    config.padding    = 0;
-    config.align      = PANGO_ALIGN_CENTER;
-    config.v_align    = CENTER;
+    config.font        = "Sans 20";
+    config.bounds_only = false;
+    config.autosize_h  = false;
+    config.autosize_v  = false;
+    config.x           = 30;
+    config.y           = 30;
+    config.width       = 200;
+    config.height      = 50;
+    config.border      = 5;
+    config.c_fg        = (union rgba)(uint32_t)0xFFFFFFFFU;
+    config.c_bg        = (union rgba)(uint32_t)0xFF888888U;
+    config.c_border    = (union rgba)(uint32_t)0x88888888U;
+    config.padding     = 0;
+    config.align       = PANGO_ALIGN_CENTER;
+    config.v_align     = CENTER;
 
     static int flag_help;
 
     static struct option long_options[] = {
         {"help", no_argument, &flag_help, 1},
+        {"bounds", no_argument, 0, 'z'},
         {"font", required_argument, 0, 'f'},
         {"autosize", required_argument, 0, 'u'},
         {"xpos", required_argument, 0, 'x'},
@@ -58,7 +60,7 @@ parse_config(int argc, char *argv[])
         {"border", required_argument, 0, 'b'},
         {"fg-color", required_argument, 0, 't'},
         {"bg-color", required_argument, 0, 'k'},
-        {"border-color", required_argument, 0, 0},
+        {"border-color", required_argument, 0, 'o'},
         {"padding", required_argument, 0, 'p'},
         {"align", required_argument, 0, 'a'},
         {"vertical-align", required_argument, 0, 'v'},
@@ -68,21 +70,15 @@ parse_config(int argc, char *argv[])
     int opt;
     int long_index;
 
-    inline bool is_longopt(const char *name) {
-        return strcmp(long_options[long_index].name, name) == 0;
-    }
-
-    while ((opt = getopt_long(argc, argv, "f:u:x:y:w:h:b:t:k:p:a:v:", long_options, &long_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "zf:u:x:y:w:h:b:t:k:p:a:v:", long_options, &long_index)) != -1) {
         if (flag_help == 1) {
             printf(USAGE);
             exit(EXIT_SUCCESS);
         }
 
         switch (opt) {
-            case 0:
-                if (is_longopt("border-color")) {
-                    config.c_border = parse_color_string(optarg);
-                }
+            case 'z':
+                config.bounds_only = true;
                 break;
             case 'f':
                 config.font = optarg;
@@ -110,6 +106,9 @@ parse_config(int argc, char *argv[])
                 break;
             case 'k':
                 config.c_bg = parse_color_string(optarg);
+                break;
+            case 'o':
+                config.c_border = parse_color_string(optarg);
                 break;
             case 'p':
                 config.padding = atoi(optarg);
@@ -306,8 +305,11 @@ autosize_bounds()
         window_dimens[1] = config.height + config.padding * 2;
     }
 
-    printf("%dx%d\n", window_dimens[0], window_dimens[1]);
-    fflush(stdout);
+    if (config.bounds_only) {
+        printf("%dx%d\n", window_dimens[0], window_dimens[1]);
+        fflush(stdout);
+        exit(EXIT_SUCCESS);
+    }
 
     ctx.surface = cairo_xcb_surface_create(ctx.conn, ctx.window, ctx.visual, window_dimens[0], window_dimens[1]);
     ctx.cr = cairo_create(ctx.surface);

@@ -1,21 +1,22 @@
 #!/usr/bin/env bash
-
 # box_size_sync: example script to get the size of an autosized box and align
 # another box with it.
 
 readonly BOX_X=30 BOX_Y=30 BOX_GAP=15
 
-# Send the output of the first box to FD 3.
-exec 3< <(box11 --xpos "$BOX_X" \
-                --ypos "$BOX_Y" \
-                --autosize h    \
-                <<< 'Foobar')
+# Automatically close the boxes when this script exits.
+trap 'kill $(jobs -p)' EXIT
 
-box_dimens="$(head -n1 <&3)"
+box_dimens="$(box11 --autosize h --bounds <<< 'Foobar')"
 box_width="${box_dimens%x*}"
 box_height="${box_dimens#*x}"
 
 printf 'Width: %d\tHeight: %d\n' "$box_width" "$box_height"
+
+box11 --xpos "$BOX_X" \
+      --ypos "$BOX_Y" \
+      --autosize h \
+      <<< 'Foobar' &
 
 box11 --xpos "$BOX_X" \
       --ypos "$(( $BOX_Y+$BOX_GAP+$box_height ))" \

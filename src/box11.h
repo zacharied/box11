@@ -8,6 +8,7 @@
 #define USAGE \
     "Usage: box11 [OPTIONS]\n"\
     "   --help              Show this help\n"\
+    "-z --bounds            Print the size of the box that would be drawn and then exit\n"\
     "-f --font [FONT]       Print text with font FONT\n"\
     "-u --autosize (h)(v)   Adjust the window dimensions to fit the text. Overrides other positioning arguments\n"\
     "-x --xpos [X]          Set the x-coordinate of the box\n"\
@@ -64,6 +65,7 @@ struct xcb_context {
 struct config {
     const char *font;
     bool autosize_h, autosize_v;
+    bool bounds_only;
     uint32_t x, y, width, height;
     uint32_t border;
     uint32_t padding;
