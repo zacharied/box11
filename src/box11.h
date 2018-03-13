@@ -18,6 +18,8 @@
     "-b --border [BORDER]   Set the border width of the box\n"\
     "-t --fg-color [COLOR]  Draw text with the color COLOR\n"\
     "-k --bg-color [COLOR]  Draw box with the background color COLOR\n"\
+    "-o --border-color [COLOR]\n"\
+    "                       Draw box border with color COLOR\n"\
     "-a --align (l|c|r)     Horizontally align text left, center, or right\n"\
     "-p --padding [PADDING] Horizontally pad the text by PADDING pixels\n"\
     "-v --vertical-align (t|c|b)\n"\
