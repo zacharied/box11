@@ -261,9 +261,23 @@ create_window(void)
 void
 event_loop(void)
 {
-    char text[1024];
+    /* Get size of input. */
+    unsigned int max_len = 1024;
+    char *text = malloc(max_len);
+
+    unsigned int len = 0;
+    char c;
+    while ((c = getchar()) != EOF) {
+        /* Grow text buffer if input is too large. */
+        text[len++] = c;
+        if (len == max_len) {
+            max_len *= 2;
+            text = realloc(text, max_len);
+        }
+    }
+
+    /* Draw text if there is input. */
     for (;;) {
-        int len = read(0, text, 1024);
         if (text[len - 1] == '\n') {
             text[len - 1] = '\0';
         } else {
