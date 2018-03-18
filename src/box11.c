@@ -9,6 +9,9 @@
 #include <xcb/xcb_xrm.h>
 #include <cairo/cairo-xcb.h>
 
+#define TEXT_BUFFER_START_SZ 1024
+#define TEXT_BUFFER_COPY 128
+
 struct xcb_context ctx;
 struct config config;
 
@@ -259,37 +262,39 @@ create_window(void)
 }
 
 void
-event_loop(void)
+event_loop()
 {
-    /* Get size of input. */
-    unsigned int max_len = 1024;
-    char *text = malloc(max_len);
+    char *text = malloc(TEXT_BUFFER_START_SZ);
+    int size = TEXT_BUFFER_START_SZ;
 
-    unsigned int len = 0;
-    char c;
-    while ((c = getchar()) != EOF) {
-        /* Grow text buffer if input is too large. */
-        text[len++] = c;
-        if (len == max_len) {
-            max_len *= 2;
-            text = realloc(text, max_len);
-        }
-    }
+    int len = 0;
+    int input_len = 0;
 
     /* Draw text if there is input. */
     for (;;) {
+        do {
+            /* Double buffer size if we'll go above its size. */
+            if (len + TEXT_BUFFER_COPY >= size) {
+                size *= 2;
+                text = realloc(text, size);
+            }
+
+            input_len = read(0, text + len, TEXT_BUFFER_COPY);
+            len += input_len;
+        } while (input_len == TEXT_BUFFER_COPY);
+
         if (text[len - 1] == '\n') {
             text[len - 1] = '\0';
         } else {
             text[len] = '\0';
         }
 
-        if (text[0] == 0) {
-            pause();
-        }
-
         draw_text(text);
         xcb_flush(ctx.conn);
+
+        if (input_len == 0) {
+            pause();
+        }
     }
 }
 
