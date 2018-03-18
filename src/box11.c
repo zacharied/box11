@@ -24,7 +24,7 @@ config_parse_autosize_args(const char *arg)
         } else if (arg[i] == 'v') {
             config.autosize_v = true;
         } else {
-            fprintf(stderr, "Unrecognized autosize direction: \"%c\".\n", arg[i]);
+            fprintf(stderr, "unrecognized autosize direction: \"%c\".\n", arg[i]);
         }
     }
 }
@@ -124,7 +124,7 @@ parse_config(int argc, char *argv[])
                 } else if (*optarg == 'r') {
                     config.align = PANGO_ALIGN_RIGHT;
                 } else {
-                    fprintf(stderr, "Unrecognized alignment setting.\n");
+                    fprintf(stderr, "unrecognized alignment setting.\n");
                     exit(EXIT_FAILURE);
                 }
                 break;
@@ -136,12 +136,12 @@ parse_config(int argc, char *argv[])
                 } else if (*optarg == 'b') {
                     config.v_align = BOTTOM;
                 } else {
-                    fprintf(stderr, "Unrecognized alignment setting.\n");
+                    fprintf(stderr, "unrecognized alignment setting.\n");
                     exit(EXIT_FAILURE);
                 }
                 break;
             case ':':
-                fprintf(stderr, "Option requires an argument.\n");
+                fprintf(stderr, "option requires an argument.\n");
                 exit(EXIT_FAILURE);
                 break;
         }
@@ -149,11 +149,11 @@ parse_config(int argc, char *argv[])
 
     /* Provide warnings for ignored parameters. */
     if ((config.autosize_h && config.align != PANGO_ALIGN_CENTER) || (config.autosize_v && config.v_align != CENTER)) {
-        fprintf(stderr, "Warning: Alignment settings are ignored when the box is autosized.\n");
+        fprintf(stderr, "warning: Alignment settings are ignored when the box is autosized.\n");
     }
 
     if (config.bounds_only && !(config.autosize_h || config.autosize_v)) {
-        fprintf(stderr, "Warning: Will not print bounds if box is not autosized.\n");
+        fprintf(stderr, "warning: Will not print bounds if box is not autosized.\n");
     }
 }
 
