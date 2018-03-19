@@ -149,11 +149,11 @@ parse_config(int argc, char *argv[])
 
     /* Provide warnings for ignored parameters. */
     if ((config.autosize_h && config.align != PANGO_ALIGN_CENTER) || (config.autosize_v && config.v_align != CENTER)) {
-        fprintf(stderr, "warning: Alignment settings are ignored when the box is autosized.\n");
+        fprintf(stderr, "warning: alignment settings are ignored when the box is autosized.\n");
     }
 
     if (config.bounds_only && !(config.autosize_h || config.autosize_v)) {
-        fprintf(stderr, "warning: Will not print bounds if box is not autosized.\n");
+        fprintf(stderr, "warning: will not print bounds if box is not autosized.\n");
     }
 }
 
