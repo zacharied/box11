@@ -200,6 +200,10 @@ initialize_context(void)
     ctx.screen = xcb_setup_roots_iterator(xcb_get_setup(ctx.conn)).data;
 
     ctx.visual = get_visualtype();
+    if (!ctx.visual) {
+        fprintf(stderr, "could not get a 32-bit visualtype");
+        exit(1);
+    }
 
     ctx.window = xcb_generate_id(ctx.conn);
 
@@ -262,18 +266,22 @@ create_window(void)
 }
 
 void
-event_loop()
+event_loop(void)
 {
+    /* Text to be printed and current size of its buffer. */
     char *text = malloc(TEXT_BUFFER_START_SZ);
     int size = TEXT_BUFFER_START_SZ;
 
+    /* Current length of the displayed string. */
     int len = 0;
+
+    /* Size of the last read. */
     int input_len = 0;
 
     /* Draw text if there is input. */
     for (;;) {
         do {
-            /* Double buffer size if we'll go above its size. */
+            /* Double buffer size if the next read will go above its size. */
             if (len + TEXT_BUFFER_COPY >= size) {
                 size *= 2;
                 text = realloc(text, size);
@@ -283,18 +291,24 @@ event_loop()
             len += input_len;
         } while (input_len == TEXT_BUFFER_COPY);
 
+        /* Stop and wait for signal if there is no more reading to do. */
+        if (input_len == 0) {
+            pause();
+        }
+
+        /* Strip newline and add terminator. */
         if (text[len - 1] == '\n') {
             text[len - 1] = '\0';
         } else {
             text[len] = '\0';
         }
 
+        /* Render the text to the window. */
         draw_text(text);
         xcb_flush(ctx.conn);
 
-        if (input_len == 0) {
-            pause();
-        }
+        /* Reset input pointer. */
+        len = 0;
     }
 }
 
