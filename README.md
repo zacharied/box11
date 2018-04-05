@@ -20,8 +20,8 @@ done | box11 -u hv
 ```
 
 This will write the date in a grey box in the upper-left corner of the screen,
-updating it once per second. The box will automatically resize to fit the input
-text.
+updating it once per second. The `-u hv` argument will cause the box to
+automatically resize to fit the horizontal and verticla bounds of the text.
 
 ## Build
 
