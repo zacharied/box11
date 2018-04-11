@@ -19,6 +19,6 @@ box11 --xpos "$BOX_X" \
       <<< 'Foobar' &
 
 box11 --xpos "$BOX_X" \
-      --ypos "$(( $BOX_Y+$BOX_GAP+$box_height ))" \
+      --ypos "$(( BOX_Y + BOX_GAP + box_height ))" \
       --width "$box_width" \
       <<< 'Baz'
