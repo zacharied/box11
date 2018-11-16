@@ -6,25 +6,29 @@
 #define APP_NAME "box11"
 
 #define USAGE \
-    "Usage: box11 [OPTIONS]\n"\
-    "   --help              Show this help\n"\
-    "-z --bounds            Print the size of the box that would be drawn and then exit\n"\
-    "-f --font [FONT]       Print text with font FONT\n"\
-    "-u --autosize (h)(v)   Adjust the window dimensions to fit the text. Overrides other positioning arguments\n"\
-    "-x --xpos [X]          Set the x-coordinate of the box\n"\
-    "-y --ypos [Y]          Set the y-coordinate of the box\n"\
-    "-w --width [WIDTH]     Set the width of the box\n"\
-    "-h --height [HEIGHT]   Set the height of the box\n"\
-    "-b --border [BORDER]   Set the border width of the box\n"\
-    "-t --fg-color [COLOR]  Draw text with the color COLOR\n"\
-    "-k --bg-color [COLOR]  Draw box with the background color COLOR\n"\
-    "-o --border-color [COLOR]\n"\
-    "                       Draw box border with color COLOR\n"\
-    "-a --align (l|c|r)     Horizontally align text left, center, or right\n"\
-    "-p --padding [PADDING] Horizontally pad the text by PADDING pixels\n"\
-    "-v --vertical-align (t|c|b)\n"\
-    "                       Vertically align text top, center, or bottom\n"\
+    "\033[1mUSAGE\033[0m\n"\
+    " box11 [OPTION]...\n"\
+    "\n\033[1mOPTIONS\033[0m\n"\
+    "    --help              Show this help\n"\
+    " -z --bounds            Print the size of the box that would be drawn and then exit\n"\
+    " -f --font [FONT]       Print text with font FONT\n"\
+    " -u --autosize (h)(v)   Adjust the window dimensions to fit the text. Overrides\n"\
+    "                        other positioning arguments\n"\
+    " -x --xpos [X]          Set the x-coordinate of the box\n"\
+    " -y --ypos [Y]          Set the y-coordinate of the box\n"\
+    " -w --width [WIDTH]     Set the width of the box\n"\
+    " -h --height [HEIGHT]   Set the height of the box\n"\
+    " -b --border [BORDER]   Set the border width of the box\n"\
+    " -t --fg-color [COLOR]  Draw text with the color COLOR\n"\
+    " -k --bg-color [COLOR]  Draw box with the background color COLOR\n"\
+    " -o --border-color [COLOR]\n"\
+    "                        Draw box border with color COLOR\n"\
+    " -a --align (l|c|r)     Horizontally align text left, center, or right\n"\
+    " -p --padding [PADDING] Horizontally pad the text by PADDING pixels\n"\
+    " -v --vertical-align (t|c|b)\n"\
+    "                        Vertically align text top, center, or bottom\n"\
     "\nColors should be given in the form AARRGGBB.\n"\
+    "Text is read from standard input.\n"\
     "All measurements are in pixels.\n"
 
 #define DPI_SCALE_DIVISOR 96
