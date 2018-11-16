@@ -32,7 +32,7 @@ config_parse_autosize_args(const char *arg)
 void
 parse_config(int argc, char *argv[])
 {
-    /* Initialize default arguments. */
+    // Initialize default arguments.
     config.font        = "Sans 20";
     config.bounds_only = false;
     config.autosize_h  = false;
@@ -147,7 +147,7 @@ parse_config(int argc, char *argv[])
         }
     }
 
-    /* Provide warnings for ignored parameters. */
+    // Provide warnings for ignored parameters.
     if ((config.autosize_h && config.align != PANGO_ALIGN_CENTER) || (config.autosize_v && config.v_align != CENTER)) {
         fprintf(stderr, "warning: alignment settings are ignored when the box is autosized.\n");
     }
@@ -160,7 +160,7 @@ parse_config(int argc, char *argv[])
 union rgba
 parse_color_string(const char *c)
 {
-    /* Thanks @lemonboy. */
+    // Thanks @lemonboy.
     union rgba temp = (union rgba)(uint32_t)strtoul(c, NULL, 16);
     return (union rgba){
         .r = (temp.r * temp.a) / 255,
@@ -170,7 +170,7 @@ parse_color_string(const char *c)
     };
 }
 
-/* Attempts to find an RGBA visual. */
+// Attempts to find an RGBA visual.
 xcb_visualtype_t*
 get_visualtype(void)
 {
@@ -190,11 +190,11 @@ get_visualtype(void)
     return NULL;
 }
 
-/* Sets up the primary xcb_context container. */
+// Sets up the primary xcb_context container.
 void
 initialize_context(void)
 {
-    /* XCB */
+    // XCB
     ctx.conn = xcb_connect(NULL, NULL);
 
     ctx.screen = xcb_setup_roots_iterator(xcb_get_setup(ctx.conn)).data;
@@ -214,7 +214,7 @@ initialize_context(void)
     xcb_xrm_resource_get_long(xrdb, "dpi", APP_NAME, &ctx.dpi);
     ctx.scale = ctx.dpi / DPI_SCALE_DIVISOR;
 
-    /* Cairo and Pango */
+    // Cairo and Pango
     ctx.surface = cairo_xcb_surface_create(ctx.conn, ctx.window, ctx.visual, config.width, config.height);
     ctx.cr = cairo_create(ctx.surface);
     ctx.pango = pango_cairo_create_context(ctx.cr);
@@ -268,20 +268,20 @@ create_window(void)
 void
 event_loop(void)
 {
-    /* Text to be printed and current size of its buffer. */
+    // Text to be printed and current size of its buffer.
     char *text = malloc(TEXT_BUFFER_START_SZ);
     int size = TEXT_BUFFER_START_SZ;
 
-    /* Current length of the displayed string. */
+    // Current length of the displayed string.
     int len = 0;
 
-    /* Size of the last read. */
+    // Size of the last read.
     int input_len = 0;
 
-    /* Draw text if there is input. */
+    // Draw text if there is input.
     for (;;) {
         do {
-            /* Double buffer size if the next read will go above its size. */
+            // Double buffer size if the next read will go above its size.
             if (len + TEXT_BUFFER_COPY >= size) {
                 size *= 2;
                 text = realloc(text, size);
@@ -291,23 +291,23 @@ event_loop(void)
             len += input_len;
         } while (input_len == TEXT_BUFFER_COPY);
 
-        /* Stop and wait for signal if there is no more reading to do. */
+        // Stop and wait for signal if there is no more reading to do.
         if (input_len == 0) {
             pause();
         }
 
-        /* Strip newline and add terminator. */
+        // Strip newline and add terminator.
         if (text[len - 1] == '\n') {
             text[len - 1] = '\0';
         } else {
             text[len] = '\0';
         }
 
-        /* Render the text to the window. */
+        // Render the text to the window.
         draw_text(text);
         xcb_flush(ctx.conn);
 
-        /* Reset input pointer. */
+        // Reset input pointer.
         len = 0;
     }
 }
@@ -357,14 +357,14 @@ autosize_bounds()
 void
 draw_text(const char *text)
 {
-    /* Reset the surface. */
+    // Reset the surface.
     cairo_save(ctx.cr);
     cairo_set_source_rgba(ctx.cr, (double) config.c_bg.r / 255.0, (double) config.c_bg.g / 255.0, (double) config.c_bg.b / 255.0, (double) config.c_bg.a / 255.0);
     cairo_set_operator(ctx.cr, CAIRO_OPERATOR_SOURCE);
     cairo_paint(ctx.cr);
     cairo_restore(ctx.cr);
 
-    /* Set the text font. */
+    // Set the text font.
     pango_layout_set_markup(ctx.layout, text, -1);
     PangoFontDescription *desc = pango_font_description_from_string(config.font);
     pango_layout_set_font_description(ctx.layout, desc);
@@ -397,10 +397,10 @@ draw_text(const char *text)
     }
 
 
-    /* Draw text offset by padding. */
+    // Draw text offset by padding.
     cairo_translate(ctx.cr, config.padding, 0);
 
-    /* Draw the text. */
+    // Draw the text.
     cairo_set_source_rgba(ctx.cr, (double) config.c_fg.r / 255.0, (double) config.c_fg.g / 255.0, (double) config.c_fg.b / 255.0, (double) config.c_fg.a / 255.0);
     pango_cairo_show_layout(ctx.cr, ctx.layout);
 

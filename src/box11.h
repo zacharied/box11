@@ -33,7 +33,7 @@
 
 #define DPI_SCALE_DIVISOR 96
 
-/* An RGBA color map represented as a 32-bit integer. */
+// An RGBA color map represented as a 32-bit integer.
 union rgba {
     struct {
         uint8_t b;
@@ -50,7 +50,7 @@ typedef enum vertical_align {
     BOTTOM
 } vertical_align;
 
-/* Data necessary for interacting with the X server. */
+// Data necessary for interacting with the X server.
 struct xcb_context {
     xcb_connection_t *conn;
     xcb_screen_t *screen;
@@ -67,7 +67,7 @@ struct xcb_context {
     uint32_t scale;
 };
 
-/* Given command-line arguments. */
+// Given command-line arguments.
 struct config {
     const char *font;
     bool autosize_h, autosize_v;
